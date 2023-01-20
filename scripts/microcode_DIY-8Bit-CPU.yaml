@@ -1,0 +1,183 @@
+PinDefintion:
+  InstrucionPins: #from A12 to A0
+    - NC
+    - B_F
+    - I_7
+    - I_6
+    - I_5
+    - I_4
+    - I_3
+    - I_2
+    - I_1
+    - I_0
+    - C_2
+    - C_1
+    - C_0
+    
+  ControllLines: #from IO7.2 to IO0.2 and IO7.1 to IO0.1
+    - C_JE
+    - C_JC
+    - C_JJ
+    - C_E
+    - C_O
+    - MR_I
+    - MR_O
+    - RW
+    - MA_I
+    - M_O
+    - IR_I
+    - RST_SC
+    - A_E
+    - A_O
+    - E_E
+    - NC
+
+SubComands:
+  ALU_ENABLE: A_E, M_O
+  MEM_TO_MR: M_O, MR_I 
+  MEM_TO_IR: M_O, IR_I
+  MEM_TO_EXT: M_O, E_E
+  EXT_TO_MEM: RW, E_E
+  ALU_TO_MEM: RW, A_O
+  ALU_TO_EXT: A_O, E_E
+  PC_TO_MEM: MA_I, C_O
+  PC_TO_EXT: C_O, E_E
+  MR_TO_MEM: MA_I, MR_O
+  JUMP: M_O, C_JJ
+  JUMP_EQUAL: M_O, C_JE
+  JUMP_CARRY: M_O, C_JC
+  COUNT: C_E
+  SC_RESET: RST_SC
+
+Instructions:
+  FETCH_CYCLE:
+    "FETCH":
+      Description: Loading new Instruction
+      OpCode: XXXXXXXX
+      Output: 
+        - PC_TO_MEM
+        - MEM_TO_IR, COUNT
+        - PC_TO_MEM
+
+  CMD:
+    #ALU-LOGIC
+    "LOG #":
+      Description: "Do Logic ALU Calculation (Data)"
+      OpCode: 000XXXXX
+      Output:
+        - ALU_ENABLE
+        - COUNT
+        - SC_RESET
+
+    "LOG":
+      Description: "Do Logic ALU Calculation (Address)"
+      OpCode: 100XXXXX
+      Output:
+        - MEM_TO_MR, COUNT
+        - MR_TO_MEM
+        - ALU_ENABLE
+        - SC_RESET
+
+    #ALU-ARITHMETIC
+    "ARI #":
+      Description: "Do Arithmetic ALU Calculation (Data)"
+      OpCode: 001XXXXX
+      Output:
+        - ALU_ENABLE
+        - COUNT
+        - SC_RESET
+
+    "ARI":
+      Description: "Do Arithmetic ALU Calculation (Address)"
+      OpCode: 101XXXXX
+      Output:
+        - MEM_TO_MR, COUNT
+        - MR_TO_MEM
+        - ALU_ENABLE
+        - SC_RESET
+
+    #REGISTER WRITE
+    "RLM #":
+      Description: "Register Load Memory (Data)"
+      OpCode: 01000XXX
+      Output:
+        - MEM_TO_EXT
+        - COUNT
+        - SC_RESET
+
+    "RLM":
+      Description: "Register Load Memory (Address)"
+      OpCode: 11000XXX
+      Output:
+        - MEM_TO_MR, COUNT
+        - MR_TO_MEM
+        - MEM_TO_EXT
+        - SC_RESET
+
+    "STR":
+      Description: "Store Register in Memory (Address)"
+      OpCode: 11001XXX
+      Output:
+        - MEM_TO_MR, COUNT
+        - MR_TO_MEM
+        - EXT_TO_MEM
+        - SC_RESET
+    
+    "STA":
+      Description: "Store ALU in Memory (Address)"
+      OpCode: 11010XXX
+      Output:
+        - MEM_TO_MR, COUNT
+        - MR_TO_MEM
+        - ALU_TO_MEM
+        - SC_RESET
+
+    "RLA":
+      Description: "Register Load ALU"
+      OpCode: 01011XXX
+      Output:
+        - ALU_TO_EXT
+        - SC_RESET
+
+    #NO-OP
+    "NOP":
+      Description: "Do Nothing"
+      OpCode: 111000XX
+      Output:
+        - SC_RESET
+
+    "JMP":
+      Description: "Jump to Address"
+      OpCode: 111100XX
+      Output:
+        - JUMP
+        - SC_RESET
+
+    "JPE":
+      Description: "Jump to Address if Equal"
+      OpCode: 111010XX
+      Output:
+        - JUMP_EQUAL
+        - SC_RESET
+
+    "JPC":
+      Description: "Jump to Address if Carry"
+      OpCode: 111101XX
+      Output:
+        - JUMP_CARRY
+        - SC_RESET
+
+  UNDEFINED:
+    "UNDEF":
+      Description: "All Undefined Cases"
+      OpCode: XXXXXXXX
+      Output: 
+        - SC_RESET
+
+  BOOT_SEQUENCE:
+    Output:
+      - C_O, E_E, A_E, MA_I
+      - C_E, RW, E_E
+      - RST_SC
+
+

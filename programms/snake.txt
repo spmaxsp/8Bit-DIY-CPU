@@ -1,0 +1,80 @@
+field:
+
+ 1, 2, 3, 4, 5, 6, 7, 8,
+ 9,10,11,12,13,14,15,16,
+17,18,19,20,21,22,23,24,
+25,26,27,28,29,30,31,32,
+33,34,35,36,37,38,39,40,
+41,42,43,44,45,46,47,48,
+49,50,51,52,53,54,55,56,
+57,58,59,60,61,62,63,64,
+
+
+variables
+NOW_POINTER
+CURRENT_POS
+SNAKE
+APPLE
+INPUT
+FIELD0
+FIELD1
+FIELD2
+FIELD3
+FIELD4
+FIELD5
+FIELD6
+FIELD7
+FIELD8
+
+
+logic:
+
+-make movement:
+	- check for inputs:
+		Load In Reg to INPUT
+		Load 1000 to alu
+		INPUT minus alu
+		Jump(carry) to up
+		Load 0100 to alu
+		INPUT minus alu
+		Jump(carry) to down
+		Load 0010 to alu
+		INPUT minus alu
+		Jump(carry) to left
+		Load 0001 to alu
+		INPUT minus alu
+		Jump(carry) to right
+		- up: 
+			CURRENT_POS < 9 
+			jump game_over
+		   	CURRENT_POS - 8
+			jump check_snake_collision
+		- down:
+			CURRENT_POS > 56 
+			jump game_over
+		   	CURRENT_POS + 8
+			jump check_snake_collision
+		- right:
+			CURRENT_POS ends on 000
+			jump game_over
+			CURRENT_POS + 1
+			jump check_snake_collision
+		- left:
+			CURRENT_POS ends on 001 
+			jump game_over
+			CURRENT_POS -1
+			jump check_snake_collision
+- check_snake_collision:
+	CURRENT_POS == SNAKE
+	jump equal game over
+	SNAKE == 0
+	jump equal add_snake
+	jump chek_snake_collision
+- add_snake
+- draw_snake
+- game_over:
+
+Input Check:
+
+
+
