@@ -1,0 +1,117 @@
+Bit manipulation: bitwise and bitshift functions implemented with a single 74181
+
+In low level programming the ability to manipulate or move bits by executing logic instructions is extremely useful or even necessary. "Bitwise operators" are used to change individual bits in an operand, while "Bitshift operators" are used to move all the bits of the operand. Here below are described situations where bitwise and bit shift operators can be helpful.
+
+ 
+
+The "NOT" instruction is used to flip every bit (each 0 becomes 1, 1 becomes 0) and performs the one's complement operation on the destination.
+
+Example:
+
+A = 0101
+
+NOT A = 1010
+
+ 
+
+The "AND" instruction can be used to clear specific destination bits while leaving the other bits unchanged or mask out unwanted bits or to check if the value of certain bits are "0".
+
+Example:
+
+A = 0101
+
+A AND 1110 = 0100 (clear the least significant bit (LSB))
+
+A AND 0011 = 0001 (ignore or "mask" the two most significant bits (MSB))
+
+A AND 1000 = 0000 (check if the MSB is "0")
+
+In the 74181 chip, the carry output Cn+4 (pin 16) is set when any arithmetic function containing a subtraction requires a borrow into the the most significant bit (i.e. the result is less than zero, treating the operands as unsigned), otherwise it is cleared. In APOLLO181 we can check if the value of certain bits are "0" simply by testing the Carry flag soon after having executed the “A AND B minus 1” instruction.  To perform “A AND B minus 1” in the 74181, initial Carry must be set to “No Carry”. Only if all the tested bits are zero, the result of the logic AND is 0000, the “A AND B minus 1” instruction generates a “borrow” and the Cn+4 output goes high (i.e. “No Carry” status in APOLLO181 if the tested bits are "0").
+
+ 
+
+The "OR" instruction can be used to set specific destination bits while preserving the other bits, or it can be used to check if the value of certain bits are "1".
+
+Example:
+
+A = 0101
+
+A OR 1000 = 1101 (set the MSB)
+
+A OR 1110 = 1111 (check if the LSB is "1")
+
+A OR 0000 = 0101 (check if null)
+
+Method One: in the 74181 chip, the carry output Cn+4 (pin 16) is cleared when any arithmetic function containing an addition generates a carry out of the most significant bit (i.e. the sum does not fit in the 4-bit output, treating the operands as unsigned), otherwise it is set. In APOLLO181 we can check if the value of certain bits are "1" simply by testing the Carry flag soon after having executed the “A OR B plus 1” instruction. To perform “A OR B plus 1” in the 74181, initial Carry must be set to “With Carry”. Only if all the tested bits are one, the result of the logic OR is 1111, the “A OR B plus 1” instruction generates a carry and the Cn+4 output goes low (i.e. “With Carry” status in APOLLO181  if the tested bits are "1").
+
+Method Two (working with the 74181 but not implemented in APOLLO181 since flags are not latched after logical operations): in the 74181 chip, the A=B output (pin 14) is set when the result of any arithmetic or logic function is "all-ones" (i.e all the bits of the 4-bit output are "1"), otherwise it is cleared. In the 74181 we can check if the value of certain bits are "1" simply by testing the Zero flag soon after having executed the OR instruction. Only if all the tested bits are one, the result of the OR operation gives "1111" and the A=B output goes high.
+
+ 
+
+The "XOR" instruction can be used to complement specific destination bits (for example to change the sign) or to clear a word or for encryption/decryption purpose or to exchange the contents of two locations A and B.
+
+Example:
+
+A = 0101
+
+A XOR 1000 = 1101 (change the MSB)
+
+A XOR A = 0000 (clear itself)
+
+A XOR B XOR B = A = 0101 (encryption/decryption)
+
+A XOR B XOR A = B (exchange A with B)
+
+
+"Shift" and "Rotate" instructions shift the bits in the destination operand by one or more positions either to the left or right. The difference between Rotate and Shift is that Rotate cycles the bits around, moving the bits it shifts out at one end, back in at the other end, while Shift loses the bits that are moved out and fills the empty bits with zeros. Shifting and rotation instructions are anyway one of the most useful set in any processor's instruction set.
+
+The "SHIFT LEFT" instruction can be used to multiply an unsigned operand by powers of 2 or to move a low nibble into a high nibble of a large 8 bit register.
+
+Example:
+
+A = 0000 0101 = 5d (i.e. in decimal)
+
+SHL A = 0000 1010 = 5d * 2 = 10d (multiply by 2)
+
+SHL A SHL A SHL A SHL A= 0101 0000 (move a low nibble into a high nibble )
+
+ 
+
+The "SHIFT RIGHT" instruction can be used to divide an unsigned operand by powers of 2. The remainder will be found in the carry flag after a shift-right operation. It can be also used to move a high nibble into a low nibble of a large 8 bit register.
+
+Example:
+
+A = 0101 
+
+SHR A = 0010 = 5d / 2 = 2d
+
+Using both shift "right" and "left" instructions it is possible to perform a fast binary multiplication in an efficient way by implementing the following simple algorithm:
+
+1) Shift the multiplier to the right
+
+2) If Carry = 1 add the multiplicand to the result
+
+3) Shift the multiplicand to the left
+
+4) Repeat the algorithm
+
+ 
+
+The "ROTATE" instructions are useful to test a value bit-by-bit in a way that is non-destructive. Rotate can be used in hashing and cryptography, graphics, image processing and communications.
+
+Example: ROT A ROT A ROT A ROT A = A (encryption/decryption)
+
+The 74181 ALU  device is capable of adding, subtracting, left shifting, comparing and performing all logic operations but it cannot shift right and there is no direct rotate support. Thus, I have identified simple algorithms to perform the missing operations: I have optimized them to reduce the required number of clock cycles, but there might be more efficient algorithms.
+
+In APOLLO181 "Left Shifting (SHL)" is performed by adding operand to itself (A+A), soon after having cleared the Carry flag: the bits are shifted to the left, zero is filled in on the LSB (bit 0).
+
+The "Rotate Through Carry Left (RCL)" is easily performed by adding operand to itself with Carry (A+A+Carry), which is a standard function of the 74181 ALU chip: the carry flag will be copied into the LSB (bit 0) then the MSB (bit 4) will be copied into the carry flag.
+
+The "Rotate Left (ROL)" is done performing first a Left Shifting (SHL) as described, and then adding the Carry to the result (A+Carry), which is a standard function of the 74181 ALU chip: after Left Shifting, the MSB (bit 4) will be copied into the carry flag and the LSB (bit 0), which is zero, will be filled by the Carry soon after having performed the function A+Carry.
+
+In APOLLO181 "Right Shifting (SHR)" is performed by repeating four times a Rotate Through Carry Left, soon after having cleared the Carry flag: the bits are shifted to the left, zero is filled in on the LSB (bit 0) and a circular shift including the carry is done four times.
+
+The "Rotate Through Carry Right (RCR)" is performed by repeating four times a Rotate Through Carry Left: the bits are shifted to the left, the carry is filled in on the LSB (bit 0) and a circular shift including the carry is done four times.
+
+To perform the "Rotate Right (ROR)" in APOLLO181, we need before to fill the Carry flag with the LSB. First we test if the LSB is "1" with a "A OR 1110 plus 1" arithmetic operation. To perform it in the 74181, initial Carry must be set to “With Carry”. Only if the tested bit is one, the result of the logic OR is 1111, the “A OR B plus 1” instruction generates a carry and the Cn+4 output goes low (i.e. “With Carry” status in APOLLO181). Then we reload again the 4-bit word which needs to be rotated, because it was destroyed by the previous operation: this instruction doesn't affect the Carry flag that was set before to the LSB value. Now we can perform the Rotate Right using the Rotate Through Carry Right algorithm: the bits are shifted to the left, the carry is filled in on the LSB (bit 0) and a circular shift including the carry is done four times.
+
